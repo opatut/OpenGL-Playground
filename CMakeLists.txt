@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.0)
 
-project(GL)
+project(Playground)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-extras/")
 
@@ -19,11 +19,11 @@ include_directories(
 aux_source_directory(src/ sources)
 include_directories(src/)
 
-add_executable(GL
+add_executable(playground
 	${sources}
 )
 
-target_link_libraries(GL
+target_link_libraries(playground
 	${SFML_LIBRARIES}
     GLU
     GLw

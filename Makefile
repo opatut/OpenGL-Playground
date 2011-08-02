@@ -5,4 +5,4 @@ bake:
 	cd build/ && cmake .. && make -j4
 
 run:
-	./GL
+	./playground
