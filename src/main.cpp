@@ -16,10 +16,18 @@ float total_time = 0;
 noise::module::Perlin perlin;
 
 Color noiseGenerator(float x, float y) {
-    float v = perlin.GetValue(x, y, total_time * 0.1) * 100 + 120;
-    util::Clamp(v, 100.f, 120.f);
-    util::LinearScale(v, 100.f, 120.f, 0.f, 255.f);
-    return Color(v,v,v);
+    float r = perlin.GetValue(x, y, total_time * 0.1) * 100 + 120;
+    util::Clamp(r, 100.f, 120.f);
+    util::LinearScale(r, 100.f, 120.f, 0.f, 255.f);
+
+    float g = perlin.GetValue(x, y, 0.01 + total_time * 0.1) * 100 + 120;
+    util::Clamp(g, 100.f, 120.f);
+    util::LinearScale(g, 100.f, 120.f, 0.f, 255.f);
+
+    float b = perlin.GetValue(x, y, 0.02 + total_time * 0.1) * 100 + 120;
+    util::Clamp(b, 100.f, 120.f);
+    util::LinearScale(b, 100.f, 120.f, 0.f, 255.f);
+    return Color(r,g,b);
 }
 
 int main() {
