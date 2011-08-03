@@ -3,8 +3,16 @@
 
 class Color {
 public:
-    Color(char r, char g, char b, char a = 255);
-    char R, G, B, A;
+    Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+    unsigned char R, G, B, A;
+
+    static Color White;
+    static Color Black;
+    static Color Red;
+    static Color Green;
+    static Color Blue;
+    static Color Yellow;
+    static Color Transparent;
 };
 
 #endif

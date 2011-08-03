@@ -23,6 +23,11 @@ void LinearScale(T& v, T old_min, T old_max, T min, T max) {
     v = (v - old_min) * fac + min;
 }
 
+template <typename T>
+T mod(T a, T b) {
+    return (a / b) - (((int)(a / b)) * b);
+}
+
 std::string LoadFile(const char *path);
 
 } // namespace util

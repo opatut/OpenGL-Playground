@@ -1,6 +1,8 @@
 #include "Color.hpp"
+#include "Mesh.hpp"
 #include "Program.hpp"
 #include "Shader.hpp"
+#include "TerrainMesh.hpp"
 #include "Texture.hpp"
 #include "Util.hpp"
 
@@ -124,11 +126,17 @@ int main() {
     Texture texture(heightmap_size, heightmap_size, false);
     texture.Generate(&textureGenerator);
 
+    TerrainMesh terrain(texture, 256, 10, 2, 2);
+    terrain.SetPosition(Vector3f(0, -3, -5));
+    terrain.Generate(&heightmapGenerator);
+
     bool running = true;
     while(running) {
         float frame_time = frame_clock.GetElapsedTime() / 1000.f;
         frame_clock.Reset();
         total_time += frame_time;
+
+        terrain.SetRotation(Quaternion(total_time * 20, 0, 1, 0));
 
         sf::Event event;
         while (window.PollEvent(event)) {
@@ -144,27 +152,9 @@ int main() {
 
         // clear
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glTranslatef(0.f, 0.f, -2);
-        //glRotatef(total_time * 45, 0, 1, 0);
 
-
-        texture.Bind();
-        glBegin(GL_QUADS);
-            glTexCoord2f(0.f, 0.0f);
-            glVertex3f(-1.f,  1.f, 0);
-
-            glTexCoord2f(1.0f, 0.0f);
-            glVertex3f( 1.f,  1.f, 0);
-
-            glTexCoord2f(1.0f, 1.f);
-            glVertex3f( 1.f, -1.f, 0);
-
-            glTexCoord2f(0.f, 1.f);
-            glVertex3f(-1.f, -1.f, 0);
-        glEnd();
+        terrain.Render();
 
         window.Display();
     }
