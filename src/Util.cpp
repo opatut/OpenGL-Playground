@@ -12,16 +12,20 @@ bool InitGlew() {
     return err == GLEW_OK;
 }
 
-const char* LoadFile(const char *path) {
+std::string LoadFile(const char *path) {
     std::ifstream file;
     file.open(path, std::ios::in);
+    if(!file.is_open()) {
+        std::cerr << "Could not open file: " << path << std::endl;
+        return "";
+    }
     std::string line, data;
     while(file.good()) {
         std::getline(file,line);
         data += line + "\n";
     }
     file.close();
-    return data.c_str();
+    return data;
 }
 
 } // namespace util

@@ -4,7 +4,7 @@ project(Playground)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-extras/")
 
-find_package(SFML 2 COMPONENTS window REQUIRED)
+find_package(SFML 2 COMPONENTS window graphics REQUIRED)
 
 add_definitions(-Wall -Wextra -g -pedantic -fPIC -std=c++0x)
 set(CMAKE_BUILD_TYPE "Debug")

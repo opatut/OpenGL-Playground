@@ -17,6 +17,10 @@ Shader::Shader(Type type, const char* source, bool load_file) {
     } else {
         mSource = source;
     }
+    if(mSource == "") {
+        std::cerr << "Shader code empty. Exiting." << std::endl;
+        exit(1);
+    }
 
     mShaderHandle = glCreateShaderObjectARB( type == TYPE_VERTEX ? GL_VERTEX_SHADER_ARB : GL_FRAGMENT_SHADER_ARB );
 }

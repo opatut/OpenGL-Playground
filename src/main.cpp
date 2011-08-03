@@ -9,39 +9,75 @@
 #include <noise/noise.h>
 
 #include <cmath>
+#include <cstring>
 #include <iostream>
 
+////////////////////////////////////////////////////////////////
+
+void prepareNoise();
+void prepareGraphics();
+Color textureGenerator(float x, float y);
+float heightmapGenerator(float x, float y);
+
+////////////////////////////////////////////////////////////////
 
 float total_time = 0;
-noise::module::Perlin perlin;
+int heightmap_size = 512;
 
-Color noiseGenerator(float x, float y) {
-    float r = perlin.GetValue(x, y, total_time * 0.1) * 100 + 120;
-    util::Clamp(r, 100.f, 120.f);
-    util::LinearScale(r, 100.f, 120.f, 0.f, 255.f);
+sf::Window window;
+sf::Clock frame_clock;
 
-    float g = perlin.GetValue(x, y, 0.01 + total_time * 0.1) * 100 + 120;
-    util::Clamp(g, 100.f, 120.f);
-    util::LinearScale(g, 100.f, 120.f, 0.f, 255.f);
+noise::module::Perlin simplePerlin;
 
-    float b = perlin.GetValue(x, y, 0.02 + total_time * 0.1) * 100 + 120;
-    util::Clamp(b, 100.f, 120.f);
-    util::LinearScale(b, 100.f, 120.f, 0.f, 255.f);
-    return Color(r,g,b);
+noise::module::RidgedMulti mountainTerrain;
+noise::module::Billow baseFlatTerrain;
+noise::module::ScaleBias flatTerrain;
+noise::module::Perlin terrainType;
+noise::module::Select terrainSelector;
+noise::module::Turbulence finalTerrain;
+
+////////////////////////////////////////////////////////////////
+
+void prepareNoise() {
+
+    // -- terrain --
+    baseFlatTerrain.SetFrequency (2.0);
+
+    flatTerrain.SetSourceModule (0, baseFlatTerrain);
+    flatTerrain.SetScale (0.125);
+    flatTerrain.SetBias (-0.75);
+
+    terrainType.SetFrequency (0.5);
+    terrainType.SetPersistence (0.25);
+
+    terrainSelector.SetSourceModule (0, flatTerrain);
+    terrainSelector.SetSourceModule (1, mountainTerrain);
+    terrainSelector.SetControlModule (terrainType);
+    terrainSelector.SetBounds (0.0, 1000.0);
+    terrainSelector.SetEdgeFalloff (0.125);
+
+    finalTerrain.SetSourceModule (0, terrainSelector);
+    finalTerrain.SetFrequency (4.0);
+    finalTerrain.SetPower (0.125);
+
+    // -- texture --
+    simplePerlin.SetOctaveCount(3);
+    simplePerlin.SetFrequency(2);
+    simplePerlin.SetPersistence(0.8);
 }
 
-int main() {
-    sf::Window window(sf::VideoMode(800, 600, 32), "Test");
-    sf::Clock clock;
+////////////////////////////////////////////////////////////////
 
+void prepareGraphics() {
+    // create window + render context
+    window.Create(sf::VideoMode(800, 600, 32), "Test");
+
+    // initialize GLEW
     if(!util::InitGlew()) {
         window.Close();
-        return 1;
+        exit(1);
     }
 
-    perlin.SetOctaveCount(3);
-    perlin.SetFrequency(2);
-    perlin.SetPersistence(0.8);
 
     // Set color and depth clear value
     glClearDepth(1.f);
@@ -56,33 +92,43 @@ int main() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(90.f, 800.f / 600.f, .1f, 100.f);
+}
 
-    int size = 256;
+////////////////////////////////////////////////////////////////
 
-    Texture tex(size, size);
-    tex.Generate(&noiseGenerator);
-    glEnable(GL_TEXTURE_2D);
+float heightmapGenerator(float x, float y) {
+    float h = finalTerrain.GetValue(x, y, 0);
+    h = h * 0.5 + 0.5; // map to 0..1
+    util::Clamp(h, 0.f, 1.f);
+    return h;
+}
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+////////////////////////////////////////////////////////////////
 
-    // load test shader
-    /*
-    Shader shader(Shader::TYPE_FRAGMENT, "test.glsl", true);
-    Program program;
-    program.AddShader(shader);
-    program.Activate();
-    */
+Color textureGenerator(float x, float y) {
+    float h = simplePerlin.GetValue(x, y, 0);
+    util::Clamp(h, -1.f, 1.f);
+    util::LinearScale(h, -1.f, 1.f, 0.f, 255.f);
+    return Color(h, h, h);
+}
+
+////////////////////////////////////////////////////////////////
+
+int main() {
+    std::cout << "=> Setting up graphics" << std::endl;
+    prepareGraphics();
+
+    std::cout << "=> Generating media" << std::endl;
+    prepareNoise();
+
+    Texture texture(heightmap_size, heightmap_size, false);
+    texture.Generate(&textureGenerator);
 
     bool running = true;
     while(running) {
-        float frame_time = clock.GetElapsedTime() / 1000.f;
-        clock.Reset();
+        float frame_time = frame_clock.GetElapsedTime() / 1000.f;
+        frame_clock.Reset();
         total_time += frame_time;
-
-        tex.Generate(&noiseGenerator);
 
         sf::Event event;
         while (window.PollEvent(event)) {
@@ -96,6 +142,7 @@ int main() {
 
         window.SetActive();
 
+        // clear
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glMatrixMode(GL_MODELVIEW);
@@ -103,14 +150,16 @@ int main() {
         glTranslatef(0.f, 0.f, -2);
         //glRotatef(total_time * 45, 0, 1, 0);
 
+
+        texture.Bind();
         glBegin(GL_QUADS);
-            glTexCoord2f(0.f,0.0f);
+            glTexCoord2f(0.f, 0.0f);
             glVertex3f(-1.f,  1.f, 0);
 
-            glTexCoord2f(1.0f,0.0f);
+            glTexCoord2f(1.0f, 0.0f);
             glVertex3f( 1.f,  1.f, 0);
 
-            glTexCoord2f(1.0f,1.f);
+            glTexCoord2f(1.0f, 1.f);
             glVertex3f( 1.f, -1.f, 0);
 
             glTexCoord2f(0.f, 1.f);

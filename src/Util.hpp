@@ -23,7 +23,7 @@ void LinearScale(T& v, T old_min, T old_max, T min, T max) {
     v = (v - old_min) * fac + min;
 }
 
-const char* LoadFile(const char *path);
+std::string LoadFile(const char *path);
 
 } // namespace util
 
